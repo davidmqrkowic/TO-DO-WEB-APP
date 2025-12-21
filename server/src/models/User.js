@@ -64,9 +64,13 @@ export const User = sequelize.define(
       defaultValue: DataTypes.NOW,
       field: "created_at",
     },
+    avatarPath: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+    },
   },
   {
     tableName: "users",
-    timestamps: false, // ručni timestamp
+    timestamps: false, 
   }
 );
