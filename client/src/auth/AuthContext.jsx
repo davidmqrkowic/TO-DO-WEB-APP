@@ -20,7 +20,7 @@ export function AuthProvider({ children }) {
         }
         const me = await meRequest();
         setUser(me);
-      } catch (err) {
+      } catch {
         localStorage.removeItem("token");
         setUser(null);
       } finally {
@@ -33,35 +33,32 @@ export function AuthProvider({ children }) {
 
   async function login(email, password) {
     const data = await loginRequest(email, password);
-
-    // supports both {token,user} and {token, ...userFields}
     const nextToken = data?.token;
     if (!nextToken) throw new Error("Missing token from login response.");
 
     localStorage.setItem("token", nextToken);
-
     if (data.user) setUser(data.user);
-    else {
-      // fallback: fetch /me
-      const me = await meRequest();
-      setUser(me);
-    }
+    else setUser(await meRequest());
   }
 
   async function register(firstName, lastName, email, password) {
-  const data = await registerRequest(firstName, lastName, email, password);
+    const data = await registerRequest(firstName, lastName, email, password);
+    const nextToken = data?.token;
+    if (!nextToken) throw new Error("Missing token from register response.");
 
-  const nextToken = data?.token;
-  if (!nextToken) throw new Error("Missing token from register response.");
+    localStorage.setItem("token", nextToken);
+    if (data.user) setUser(data.user);
+    else setUser(await meRequest());
+  }
 
-  localStorage.setItem("token", nextToken);
-
-  if (data.user) setUser(data.user);
-  else {
+  async function refreshMe() {
+    if (!localStorage.getItem("token")) {
+      setUser(null);
+      return;
+    }
     const me = await meRequest();
     setUser(me);
   }
-}
 
   function logout() {
     localStorage.removeItem("token");
@@ -69,7 +66,7 @@ export function AuthProvider({ children }) {
   }
 
   const value = useMemo(
-    () => ({ user, isAuthed, isReady, login, register, logout }),
+    () => ({ user, isAuthed, isReady, login, register, logout, refreshMe }),
     [user, isAuthed, isReady]
   );
 

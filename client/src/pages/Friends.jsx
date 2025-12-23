@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Avatar from "../components/common/Avatar";
 import {
   fetchAllUsers,
   fetchFriendState,
@@ -220,9 +221,12 @@ export default function Friends() {
 
             return (
               <div key={uid} className="grid grid-cols-12 gap-2 px-4 py-3 border-b border-gray-800 items-center">
-                <div className="col-span-5">
-                  <div className="font-medium">{fullName}</div>
-                  <div className="text-xs text-gray-500">ID: {uid}</div>
+                <div className="col-span-5 flex items-center gap-3">
+                  <Avatar user={u} size={36} />
+                  <div>
+                    <div className="font-medium">{fullName}</div>
+                    <div className="text-xs text-gray-500">ID: {uid}</div>
+                  </div>
                 </div>
                 <div className="col-span-4 text-sm text-gray-300">{u.email || "-"}</div>
                 <div className="col-span-3 flex justify-end gap-2">

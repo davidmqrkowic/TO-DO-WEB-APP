@@ -22,8 +22,47 @@ router.get("/:boardId/members", requireAuth, async (req, res) => {
 
     await requireBoardMemberOrThrow(boardId, me);
 
-    const members = await BoardMember.findAll({ where: { boardId } });
-    return res.json({ members });
+    const members = await BoardMember.findAll({
+      where: { boardId },
+      order: [["createdAt", "ASC"]],
+    });
+
+    const userIds = members.map((m) => Number(m.userId));
+
+    const users = userIds.length
+      ? await User.findAll({
+          where: { userId: userIds },
+          attributes: ["userId", "email", "firstName", "lastName", "avatarPath", "active", "admin"],
+        })
+      : [];
+
+    const appUrl = process.env.APP_URL || `http://localhost:${process.env.PORT || 4001}`;
+
+    const userMap = new Map(
+      users.map((u) => [
+        Number(u.userId),
+        {
+          userId: Number(u.userId),
+          id: Number(u.userId),
+          email: u.email,
+          firstName: u.firstName,
+          lastName: u.lastName,
+          active: u.active,
+          admin: u.admin,
+          avatarUrl: u.avatarPath ? `${appUrl}/${u.avatarPath}` : null,
+        },
+      ])
+    );
+
+    return res.json({
+      members: members.map((m) => ({
+        boardId: Number(m.boardId),
+        userId: Number(m.userId),
+        role: m.role,
+        createdAt: m.createdAt,
+        user: userMap.get(Number(m.userId)) || null,
+      })),
+    });
   } catch (err) {
     return res.status(err.status || 500).json({ message: err.message || "Server error" });
   }
@@ -50,7 +89,7 @@ router.post("/:boardId/members", requireAuth, async (req, res) => {
       boardId,
       entityType: "member",
       entityId: data.userId,
-      action: "MEMBER_ADDED",
+      action: "board.member.added",
       meta: { userId: data.userId },
       req,
     });
@@ -81,7 +120,7 @@ router.delete("/:boardId/members/:userId", requireAuth, async (req, res) => {
       boardId,
       entityType: "member",
       entityId: userId,
-      action: "MEMBER_REMOVED",
+      action: "board.member.removed",
       meta: { userId },
       req,
     });
